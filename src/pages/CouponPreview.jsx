@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { 
   Box, 
   Typography, 
@@ -41,21 +41,65 @@ import { useReactToPrint } from 'react-to-print';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import '../components/PrintStyles.css';
-import { calculateLayout } from '../utils/couponGenerator'; // Import calculateLayout
+import { calculateLayout } from '../utils/couponGenerator';
 
-const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMainIsLoading }) => { // Renamed setIsLoading to avoid conflict
+const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMainIsLoading }) => {
   const printRef = useRef();
+  const gridRef = useRef();
+  
   const theme = useTheme();
   const [zoomLevel, setZoomLevel] = useState(1);
   const [showInfo, setShowInfo] = useState(false);
-  const [isGeneratingPdfOrPrinting, setIsGeneratingPdfOrPrinting] = useState(false); // Local loading state for PDF/Print actions
+  const [isGeneratingPdfOrPrinting, setIsGeneratingPdfOrPrinting] = useState(false);
+  const gridSize = useRef({ width: 0, height: 0 });
+  console.log('Grid Size:', gridSize.current);
+
+
+  const getScreenDPI = () => {
+  // Create a temporary element with width 1 inch
+  const div = document.createElement('div');
+  div.style.width = '1in';
+  div.style.height = '1in';
+  div.style.position = 'absolute';
+  div.style.left = '-100%';
+  document.body.appendChild(div);
+  const dpi = div.offsetWidth;
+  document.body.removeChild(div);
+  return dpi;
+};
+
+
+      const dpi = getScreenDPI(); // Dynamically get DPI
+      
+  // Calculate how many coupons per page based on settings
+  const layout = calculateLayout(settings);
+  const couponsPerPage = layout.couponsPerPage;
+
+  // Split coupons into pages
+  const couponPages = [];
+  for (let i = 0; i < coupons.length; i += couponsPerPage) {
+    couponPages.push(coupons.slice(i, i + couponsPerPage));
+  }
+
+  useEffect(() => {
+    if (!gridRef.current) return;
+    const observer = new window.ResizeObserver(entries => {
+      for (let entry of entries) {
+        const { width, height } = entry.contentRect;
+        gridSize.current = { width, height };
+      }
+    });
+    observer.observe(gridRef.current);
+    return () => observer.disconnect();
+  }, [gridRef, zoomLevel, settings]);
+
 
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
     documentTitle: `Kupon-Qurban-${new Date().toLocaleDateString()}`,
     onBeforeGetContent: () => {
       setIsGeneratingPdfOrPrinting(true);
-      if (setMainIsLoading) setMainIsLoading(true); // Also set global loading if needed
+      if (setMainIsLoading) setMainIsLoading(true);
       return Promise.resolve();
     },
     onAfterPrint: () => {
@@ -69,32 +113,32 @@ const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMai
     if (setMainIsLoading) setMainIsLoading(true);
     try {
       const element = printRef.current;
-      const { paperWidth, paperHeight } = calculateLayout(settings); // Get paper dimensions
+      const { paperWidth, paperHeight } = calculateLayout(settings);
 
-      const canvas = await html2canvas(element, {
-        scale: 2, // Adjust scale as needed for quality
-        useCORS: true,
-        logging: false,
-        width: paperWidth * (96 / 25.4), // Convert mm to pixels (assuming 96 DPI)
-        height: paperHeight * (96 / 25.4),
-        windowWidth: paperWidth * (96 / 25.4),
-        windowHeight: paperHeight * (96 / 25.4),
-      });
-      const data = canvas.toDataURL('image/png');
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      width: paperWidth * (dpi / 25.4),
+      height: paperHeight * (dpi / 25.4) * couponPages.length,
+      windowWidth: paperWidth * (dpi / 25.4),
+      windowHeight: paperHeight * (dpi / 25.4),
+    });
+      // const data = canvas.toDataURL('image/png');
 
       const pdf = new jsPDF({
         orientation: settings.orientation,
         unit: 'mm',
-        format: settings.paperSize.toLowerCase(), // Use paperSize from settings
+        format: settings.paperSize.toLowerCase(),
       });
 
-      // Get PDF page dimensions
       const pdfPageWidth = pdf.internal.pageSize.getWidth();
       const pdfPageHeight = pdf.internal.pageSize.getHeight();
 
-      // Calculate image dimensions to fit the page while maintaining aspect ratio
-      const imgProps = pdf.getImageProperties(data);
-      const aspectRatio = imgProps.width / imgProps.height;
+      // Calculate how many pages of canvas fit into one PDF page
+      const canvasHeight = canvas.height;
+      const canvasWidth = canvas.width;
+      const aspectRatio = canvasWidth / canvasHeight;
 
       let imgWidth = pdfPageWidth;
       let imgHeight = imgWidth / aspectRatio;
@@ -104,11 +148,34 @@ const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMai
         imgWidth = imgHeight * aspectRatio;
       }
 
-      // Center the image on the page (optional)
-      const x = (pdfPageWidth - imgWidth) / 2;
-      const y = (pdfPageHeight - imgHeight) / 2;
+      // Split canvas into pages for PDF
+      const pageHeight = canvasHeight / couponPages.length;
+      
+      for (let i = 0; i < couponPages.length; i++) {
+        if (i > 0) {
+          pdf.addPage();
+        }
+        
+        // Create a canvas for this page
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvasWidth;
+        pageCanvas.height = pageHeight;
+        const pageCtx = pageCanvas.getContext('2d');
+        
+        // Draw the portion of the main canvas for this page
+        pageCtx.drawImage(
+          canvas,
+          0, i * pageHeight, canvasWidth, pageHeight,
+          0, 0, canvasWidth, pageHeight
+        );
+        
+        const pageData = pageCanvas.toDataURL('image/png');
+        const x = (pdfPageWidth - imgWidth) / 2;
+        const y = (pdfPageHeight - imgHeight) / 2;
 
-      pdf.addImage(data, 'PNG', x, y, imgWidth, imgHeight);
+        pdf.addImage(pageData, 'PNG', x, y, imgWidth, imgHeight);
+      }
+
       pdf.save(`Kupon-Qurban-${new Date().toLocaleDateString().replace(/\//g, '-')}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -160,7 +227,7 @@ const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMai
             mx: 'auto'
           }}
         >
-          Kupon Anda telah siap! Pratinjau, cetak, atau simpan sebagai PDF
+          {couponPages.length} halaman kupon telah siap! Pratinjau, cetak, atau simpan sebagai PDF
         </Typography>
         
         {/* Decorative elements */}
@@ -204,10 +271,10 @@ const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMai
           }}
         >
           <Typography variant="h6" sx={{ mb: 1 }}>
-            Berhasil Membuat {coupons.length} Kupon!
+            Berhasil Membuat {coupons.length} Kupon dalam {couponPages.length} Halaman!
           </Typography>
           <Typography variant="body2">
-            Kupon sudah siap untuk dicetak atau disimpan. Pastikan printer Anda sudah siap.
+            Kupon sudah siap untuk dicetak atau disimpan. {couponsPerPage} kupon per halaman.
           </Typography>
         </Alert>
       </Fade>
@@ -248,7 +315,7 @@ const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMai
                   size="large"
                   startIcon={<PrintIcon />}
                   onClick={handlePrint}
-                  disabled={isGeneratingPdfOrPrinting} // Use local loading state
+                  disabled={isGeneratingPdfOrPrinting}
                   sx={{
                     background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
                     borderRadius: 2,
@@ -270,7 +337,7 @@ const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMai
                   size="large"
                   startIcon={<PictureAsPdfIcon />}
                   onClick={handleSavePDF}
-                  disabled={isGeneratingPdfOrPrinting} // Use local loading state
+                  disabled={isGeneratingPdfOrPrinting}
                   sx={{
                     background: `linear-gradient(45deg, ${theme.palette.secondary.main} 30%, ${theme.palette.secondary.dark} 90%)`,
                     borderRadius: 2,
@@ -373,7 +440,7 @@ const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMai
                       </ListItemIcon>
                       <ListItemText 
                         primary="Total Kupon"
-                        secondary={`${coupons.length} kupon siap cetak`}
+                        secondary={`${coupons.length} kupon dalam ${couponPages.length} halaman`}
                       />
                     </ListItem>
                     <ListItem>
@@ -381,8 +448,8 @@ const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMai
                         <VisibilityIcon color="primary" />
                       </ListItemIcon>
                       <ListItemText 
-                        primary="Format Cetak"
-                        secondary="A4 - Portrait, optimized untuk printer"
+                        primary="Kupon per Halaman"
+                        secondary={`${couponsPerPage} kupon (${settings.columns} kolom × ${settings.rows} baris)`}
                       />
                     </ListItem>
                   </List>
@@ -394,8 +461,8 @@ const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMai
                         <PictureAsPdfIcon color="secondary" />
                       </ListItemIcon>
                       <ListItemText 
-                        primary="PDF Quality"
-                        secondary="High resolution untuk hasil terbaik"
+                        primary="Format Cetak"
+                        secondary={`${settings.paperSize} - ${settings.orientation}`}
                       />
                     </ListItem>
                     <ListItem>
@@ -415,7 +482,25 @@ const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMai
         </CardContent>
       </Card>
 
-      {/* Preview Container */}
+      {/* Page Navigation */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+        <Stack direction="row" spacing={1}>
+          {couponPages.map((_, index) => (
+            <Chip
+              key={index}
+              label={`Halaman ${index + 1}`}
+              variant="outlined"
+              sx={{ cursor: 'pointer' }}
+              onClick={() => {
+                const pageElement = document.getElementById(`page-${index}`);
+                pageElement?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            />
+          ))}
+        </Stack>
+      </Box>
+
+      {/* Preview Container with Pages */}
       <Card 
         sx={{ 
           mb: 4,
@@ -437,7 +522,7 @@ const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMai
               color: theme.palette.primary.main
             }}
           >
-            Preview Kupon
+            Preview Kupon ({couponPages.length} Halaman)
           </Typography>
           
           <Box
@@ -446,200 +531,248 @@ const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMai
               transformOrigin: 'top center',
               transition: 'transform 0.3s ease',
               overflow: 'auto',
-              border: '1px solid #e0e0e0',
-              borderRadius: 2,
-              backgroundColor: 'white',
-              boxShadow: theme.shadows[2],
-              // Apply paper size to the preview container
-              width: settings.paperSize === 'A4' ? '210mm' : settings.paperSize === 'A5' ? '148mm' : settings.paperSize === 'Letter' ? '215.9mm' : '215.9mm', // Width based on paper size
-              height: settings.paperSize === 'A4' ? '297mm' : settings.paperSize === 'A5' ? '210mm' : settings.paperSize === 'Letter' ? '279.4mm' : '355.6mm', // Height based on paper size
-              // Adjust for landscape orientation
-              ...(settings.orientation === 'landscape' && {
-                width: settings.paperSize === 'A4' ? '297mm' : settings.paperSize === 'A5' ? '210mm' : settings.paperSize === 'Letter' ? '279.4mm' : '355.6mm',
-                height: settings.paperSize === 'A4' ? '210mm' : settings.paperSize === 'A5' ? '148mm' : settings.paperSize === 'Letter' ? '215.9mm' : '215.9mm',
-              }),
             }}
           >
-            <Box
-              ref={printRef}
-              sx={{
-                width: '100%',
-                p: 2,
-                '@media print': {
-                  width: '100%',
-                  height: 'auto',
-                  overflow: 'visible',
-                  padding: 0,
-                  margin: 0,
-                  backgroundColor: '#ffffff',
-                  color: '#000000',
-                  '& *': {
-                    backgroundColor: '#ffffff !important',
-                    color: '#000000 !important',
-                    border: '2px solid #000000 !important'
-                  }
-                }
-              }}            >
-              <Grid container spacing={2} sx={{ justifyContent: 'flex-start' }}>
-                {coupons.map((coupon, index) => (
-                  <Grid item key={index} xs={12} sm={6} md={4} lg={3} xl={2.4}>
-                    <Zoom in timeout={200 + index * 50}><Paper
-                        elevation={0}
-                        className="coupon-container"
-                        sx={{
-                          height: 240, // Increased height to prevent truncation
-                          border: coupon.useColors ? `2px solid ${theme.palette.primary.main}` : '2px solid #000',
-                          borderRadius: 2,
-                          p: 1.5,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
-                          pageBreakInside: 'avoid',
-                          position: 'relative',
-                          overflow: 'hidden',
-                          backgroundColor: '#ffffff', // Always white background
-                          color: '#000000', // Always black text
-                          '&:hover': {
-                            boxShadow: coupon.useColors ? theme.shadows[4] : '0 4px 8px rgba(0,0,0,0.2)',
-                            transform: 'translateY(-2px)',
-                            transition: 'all 0.3s ease'
-                          },
-                          '@media print': {
-                            boxShadow: 'none',
-                            backgroundColor: '#ffffff',
-                            color: '#000000',
-                            border: '2px solid #000',
-                            '&:hover': {
-                              transform: 'none'
-                            }
-                          }
-                        }}
-                      >                        {/* Corner decoration - only if colored */}
-                        {coupon.useColors && (
-                          <Box
-                            className="print-hide"
-                            sx={{
-                              position: 'absolute',
-                              top: -10,
-                              right: -10,
-                              width: 20,
-                              height: 20,
-                              borderRadius: '50%',
-                              background: theme.palette.primary.main,
-                              opacity: 0.1
-                            }}
-                          />
-                        )}
-                        
-                        <Box>
-                          <Typography 
-                            variant="subtitle1" 
-                            align="center" 
-                            sx={{ 
-                              fontWeight: 'bold',
-                              fontSize: '1rem',
-                              lineHeight: 1.3,
-                              color: '#000000',
-                              mb: 0.5
-                            }}
-                          >
-                            {coupon.title}
-                          </Typography>
-                          {coupon.subtitle && (
-                            <Typography 
-                              variant="caption" 
-                              align="center" 
-                              display="block"
-                              sx={{ 
-                                mt: 0.5,
-                                color: '#666666',
-                                fontSize: '0.8rem'
-                              }}
-                            >
-                              {coupon.subtitle}
-                            </Typography>
-                          )}
-                        </Box>
-                        
-                        <Divider className="coupon-divider" sx={{ my: 1, borderColor: '#000000' }} />
-                        
-                        <Box 
-                          className="coupon-number-bg"
-                          sx={{ 
-                            display: 'flex', 
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            flexGrow: 1,
-                            background: coupon.useColors 
-                              ? `linear-gradient(45deg, ${theme.palette.primary.light}20, ${theme.palette.secondary.light}20)`
-                              : '#f8f8f8',
-                            borderRadius: 1,
-                            mx: -0.5,
-                            border: '1px solid #e0e0e0',
-                            minHeight: '80px' // Ensure adequate space for number
+            <Box ref={printRef}>
+              {couponPages.map((pageCoupons, pageIndex) => (
+                <Box
+                  key={pageIndex}
+                  id={`page-${pageIndex}`}
+                  sx={{
+                    width: settings.paperSize === 'A4' ? '210mm' : settings.paperSize === 'A5' ? '148mm' : settings.paperSize === 'Letter' ? '215.9mm' : '215.9mm',
+                    height: settings.paperSize === 'A4' ? '297mm' : settings.paperSize === 'A5' ? '210mm' : settings.paperSize === 'Letter' ? '279.4mm' : '355.6mm',
+                    ...(settings.orientation === 'landscape' && {
+                      width: settings.paperSize === 'A4' ? '297mm' : settings.paperSize === 'A5' ? '210mm' : settings.paperSize === 'Letter' ? '279.4mm' : '355.6mm',
+                      height: settings.paperSize === 'A4' ? '210mm' : settings.paperSize === 'A5' ? '148mm' : settings.paperSize === 'Letter' ? '215.9mm' : '215.9mm',
+                    }),
+                    border: '1px solid #e0e0e0',
+                    borderRadius: 2,
+                    backgroundColor: 'white',
+                    boxShadow: theme.shadows[2],
+                    mb: pageIndex < couponPages.length - 1 ? 4 : 0,
+                    p: 2,
+                    mx: 'auto',
+                    position: 'relative',
+                    pageBreakAfter: pageIndex < couponPages.length - 1 ? 'always' : 'auto',
+                    '@media print': {
+                      width: '100%',
+                      height: 'auto',
+                      overflow: 'visible',
+                      padding: 0,
+                      margin: 0,
+                      backgroundColor: '#ffffff',
+                      color: '#000000',
+                      border: 'none',
+                      boxShadow: 'none',
+                      pageBreakAfter: pageIndex < couponPages.length - 1 ? 'always' : 'auto',
+                    }
+                  }}
+                >
+                  {/* Page number indicator */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      background: theme.palette.primary.main,
+                      color: 'white',
+                      px: 1,
+                      py: 0.5,
+                      borderRadius: 1,
+                      fontSize: '0.75rem',
+                      '@media print': {
+                        display: 'none'
+                      }
+                    }}
+                  >
+                    Halaman {pageIndex + 1}
+                  </Box>
+
+                  <Grid 
+                    container 
+                    spacing={1} 
+                    sx={{ 
+                      height: '100%',
+                      justifyContent: 'flex-start',
+                      alignContent: 'flex-start'
+                    }}
+                  >
+                    {pageCoupons.map((coupon, couponIndex) => {
+                      const overallIndex = pageIndex * couponsPerPage + couponIndex;
+                      return (
+                        <Grid 
+                          item 
+                          ref={gridRef}
+                          key={overallIndex} 
+                          xs={12 / settings.columns}
+                          sx={{
+                            height: `${100 / settings.rows}%`,
+                            display: 'flex'
                           }}
                         >
-                          <Typography 
-                            variant="h2" 
-                            align="center" 
-                            sx={{ 
-                              fontWeight: 'bold',
-                              color: coupon.useColors ? theme.palette.primary.main : '#000000',
-                              textShadow: coupon.useColors ? '1px 1px 2px rgba(0,0,0,0.1)' : 'none',
-                              fontSize: { xs: '2rem', md: '2.5rem' }
-                            }}
-                          >
-                            {coupon.number}
-                          </Typography>
-                        </Box>
-                        <Divider className="coupon-divider" sx={{ my: 1, borderColor: '#000000' }} />
-                        
-                        <Box sx={{ minHeight: '60px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                          {coupon.additionalText && (
-                            <Typography 
-                              variant="caption" 
-                              align="center" 
-                              display="block"
-                              sx={{ 
-                                fontSize: '0.75rem',
-                                lineHeight: 1.3,
+                          <Zoom in timeout={200 + couponIndex * 50}>
+                            <Paper
+                              elevation={0}
+                              className="coupon-container"
+                              sx={{
+                                width: '100%',
+                                height: '100%',
+                                border: coupon.useColors ? `2px solid ${theme.palette.primary.main}` : '2px solid #000',
+                                borderRadius: 2,
+                                p: 1.5,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'space-between',
+                                pageBreakInside: 'avoid',
+                                position: 'relative',
+                                overflow: 'hidden',
+                                backgroundColor: '#ffffff',
                                 color: '#000000',
-                                mb: 1
+                                '&:hover': {
+                                  boxShadow: coupon.useColors ? theme.shadows[4] : '0 4px 8px rgba(0,0,0,0.2)',
+                                  transform: 'translateY(-2px)',
+                                  transition: 'all 0.3s ease'
+                                },
+                                '@media print': {
+                                  boxShadow: 'none',
+                                  backgroundColor: '#ffffff',
+                                  color: '#000000',
+                                  border: '2px solid #000',
+                                  '&:hover': {
+                                    transform: 'none'
+                                  }
+                                }
                               }}
                             >
-                              {coupon.additionalText}
-                            </Typography>
-                          )}
-                          
-                          {coupon.qrCode && (
-                            <Box 
-                              sx={{ 
-                                display: 'flex', 
-                                justifyContent: 'center',
-                                mt: 'auto'
-                              }}
-                            >
+                              {/* Corner decoration - only if colored */}
+                              {coupon.useColors && (
+                                <Box
+                                  className="print-hide"
+                                  sx={{
+                                    position: 'absolute',
+                                    top: -10,
+                                    right: -10,
+                                    width: 20,
+                                    height: 20,
+                                    borderRadius: '50%',
+                                    background: theme.palette.primary.main,
+                                    opacity: 0.1
+                                  }}
+                                />
+                              )}
+                              
+                              <Box>
+                                <Typography 
+                                  variant="subtitle1" 
+                                  align="center" 
+                                  sx={{ 
+                                    fontWeight: 'bold',
+                                    fontSize: '1rem',
+                                    lineHeight: 1.3,
+                                    color: '#000000',
+                                    mb: 0.5
+                                  }}
+                                >
+                                  {coupon.title}
+                                </Typography>
+                                {coupon.subtitle && (
+                                  <Typography 
+                                    variant="caption" 
+                                    align="center" 
+                                    display="block"
+                                    sx={{ 
+                                      mt: 0.5,
+                                      color: '#666666',
+                                      fontSize: '0.8rem'
+                                    }}
+                                  >
+                                    {coupon.subtitle}
+                                  </Typography>
+                                )}
+                              </Box>
+                              
+                              <Divider className="coupon-divider" sx={{ my: 1, borderColor: '#000000' }} />
+                              
                               <Box 
-                                component="img" 
-                                src={coupon.qrCode}
-                                alt="QR Code"
-                                className="qr-code"
+                                className="coupon-number-bg"
                                 sx={{ 
-                                  width: 35, 
-                                  height: 35,
-                                  border: '1px solid #000',
-                                  borderRadius: 0.5,
-                                  backgroundColor: '#ffffff'
+                                  display: 'flex', 
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  flexGrow: 1,
+                                  background: coupon.useColors 
+                                    ? `linear-gradient(45deg, ${theme.palette.primary.light}20, ${theme.palette.secondary.light}20)`
+                                    : '#f8f8f8',
+                                  borderRadius: 1,
+                                  mx: -0.5,
+                                  border: '1px solid #e0e0e0',
+                                  minHeight: '80px'
                                 }}
-                              />
-                            </Box>
-                          )}
-                        </Box>
-                      </Paper>
-                    </Zoom>
+                              >
+                                <Typography 
+                                  variant="h2" 
+                                  align="center" 
+                                  sx={{ 
+                                    fontWeight: 'bold',
+                                    color: coupon.useColors ? theme.palette.primary.main : '#000000',
+                                    textShadow: coupon.useColors ? '1px 1px 2px rgba(0,0,0,0.1)' : 'none',
+                                    fontSize: { xs: '2rem', md: '2.5rem' }
+                                  }}
+                                >
+                                  {coupon.number}
+                                </Typography>
+                              </Box>
+                              <Divider className="coupon-divider" sx={{ my: 1, borderColor: '#000000' }} />
+                              
+                              <Box sx={{ minHeight: '60px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                {coupon.additionalText && (
+                                  <Typography 
+                                    variant="caption" 
+                                    align="center" 
+                                    display="block"
+                                    sx={{ 
+                                      fontSize: '0.75rem',
+                                      lineHeight: 1.3,
+                                      color: '#000000',
+                                      mb: 1
+                                    }}
+                                  >
+                                    {coupon.additionalText}
+                                  </Typography>
+                                )}
+                                
+                                {coupon.qrCode && (
+                                  <Box 
+                                    sx={{ 
+                                      display: 'flex', 
+                                      justifyContent: 'center',
+                                      mt: 'auto'
+                                    }}
+                                  >
+                                    <Box 
+                                      component="img" 
+                                      src={coupon.qrCode}
+                                      alt="QR Code"
+                                      className="qr-code"
+                                      sx={{ 
+                                        width: 35, 
+                                        height: 35,
+                                        border: '1px solid #000',
+                                        borderRadius: 0.5,
+                                        backgroundColor: '#ffffff'
+                                      }}
+                                    />
+                                  </Box>
+                                )}
+                              </Box>
+                            </Paper>
+                          </Zoom>
+                        </Grid>
+                      );
+                    })}
                   </Grid>
-                ))}
-              </Grid>
+                </Box>
+              ))}
             </Box>
           </Box>
         </CardContent>
@@ -659,7 +792,7 @@ const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMai
           }
         }}
         onClick={handlePrint}
-        disabled={isGeneratingPdfOrPrinting} // Use local loading state
+        disabled={isGeneratingPdfOrPrinting}
       >
         <PrintIcon />
       </Fab>
