@@ -23,10 +23,11 @@ const generateQRCode = (text) => {
   ctx.fillRect(30, 10, 10, 10);
   ctx.fillRect(10, 30, 10, 10);
   
-  // Draw some random dots to look like a QR code
+  // Draw some random dots to look like a QR code based on text
+  const seed = text.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   for (let i = 0; i < 10; i++) {
-    const x = 15 + Math.floor(Math.random() * 20);
-    const y = 15 + Math.floor(Math.random() * 20);
+    const x = 15 + ((seed + i) % 20);
+    const y = 15 + ((seed + i * 2) % 20);
     ctx.fillRect(x, y, 2, 2);
   }
   
@@ -40,8 +41,7 @@ export const generateCoupons = (settings) => {
   
   for (let i = 0; i < settings.numberOfCoupons; i++) {
     const couponNumber = startNumber + i;
-    
-    const coupon = {
+      const coupon = {
       number: couponNumber,
       title: settings.title,
       subtitle: settings.subtitle,
@@ -49,6 +49,7 @@ export const generateCoupons = (settings) => {
       qrCode: settings.showQrCode ? generateQRCode(`QURBAN-${couponNumber}`) : null,
       colorScheme: settings.colorScheme,
       borderStyle: settings.borderStyle,
+      useColors: settings.useColors,
     };
     
     coupons.push(coupon);

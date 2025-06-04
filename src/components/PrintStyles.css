@@ -1,0 +1,50 @@
+/* Print-specific styles for coupons */
+@media print {
+  @page {
+    size: A4;
+    margin: 0.5in;
+  }
+  
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* Ensure all coupon elements are black and white for printing */
+  .coupon-container {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 2px solid #000000 !important;
+  }
+  
+  .coupon-container * {
+    background-color: transparent !important;
+    color: #000000 !important;
+  }
+  
+  .coupon-number-bg {
+    background-color: #f8f8f8 !important;
+    border: 1px solid #e0e0e0 !important;
+  }
+  
+  .coupon-divider {
+    border-color: #000000 !important;
+  }
+  
+  /* Hide any decorative elements during print */
+  .print-hide {
+    display: none !important;
+  }
+  
+  /* Ensure QR codes remain visible */
+  .qr-code {
+    background-color: #ffffff !important;
+    border: 1px solid #000000 !important;
+  }
+}
+
+/* General coupon styling */
+.coupon-container {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}

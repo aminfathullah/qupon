@@ -34,8 +34,7 @@ import PreviewIcon from '@mui/icons-material/Preview';
 
 import { generateCoupons } from '../utils/couponGenerator';
 
-const CouponGenerator = ({ setCoupons, setShowPreview, setIsLoading }) => {
-  const [settings, setSettings] = useState({
+const CouponGenerator = ({ setCoupons, setShowPreview, setIsLoading }) => {  const [settings, setSettings] = useState({
     numberOfCoupons: 10,
     paperSize: 'A4',
     orientation: 'portrait',
@@ -50,9 +49,10 @@ const CouponGenerator = ({ setCoupons, setShowPreview, setIsLoading }) => {
     additionalText: 'Masjid Al-Iman',
     showLogo: true,
     showQrCode: true,
-    colorScheme: 'default',
+    colorScheme: 'blackwhite',
     borderStyle: 'solid',
     startingNumber: 1,
+    useColors: false,
   });
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -340,6 +340,22 @@ const CouponGenerator = ({ setCoupons, setShowPreview, setIsLoading }) => {
                           >
                             <MenuItem value="portrait">Portrait</MenuItem>
                             <MenuItem value="landscape">Landscape</MenuItem>
+                          </Select>
+                        </FormControl>                      </Grid>
+                      
+                      <Grid item xs={12} md={6}>
+                        <FormControl fullWidth>
+                          <InputLabel>Skema Warna</InputLabel>
+                          <Select
+                            value={settings.useColors ? 'colored' : 'blackwhite'}
+                            onChange={(e) => setSettings({
+                              ...settings,
+                              useColors: e.target.value === 'colored'
+                            })}
+                            label="Skema Warna"
+                          >
+                            <MenuItem value="blackwhite">Hitam Putih</MenuItem>
+                            <MenuItem value="colored">Berwarna</MenuItem>
                           </Select>
                         </FormControl>
                       </Grid>

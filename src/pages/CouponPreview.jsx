@@ -40,6 +40,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { useReactToPrint } from 'react-to-print';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
+import '../components/PrintStyles.css';
 
 const CouponPreview = ({ coupons, setShowPreview }) => {
   const printRef = useRef();
@@ -423,8 +424,7 @@ const CouponPreview = ({ coupons, setShowPreview }) => {
               backgroundColor: 'white',
               boxShadow: theme.shadows[2]
             }}
-          >
-            <Box
+          >            <Box
               ref={printRef}
               sx={{
                 width: '100%',
@@ -434,19 +434,25 @@ const CouponPreview = ({ coupons, setShowPreview }) => {
                   height: 'auto',
                   overflow: 'visible',
                   padding: 0,
-                  margin: 0
+                  margin: 0,
+                  backgroundColor: '#ffffff',
+                  color: '#000000',
+                  '& *': {
+                    backgroundColor: '#ffffff !important',
+                    color: '#000000 !important',
+                    border: '2px solid #000000 !important'
+                  }
                 }
-              }}
-            >
-              <Grid container spacing={1}>
+              }}            >
+              <Grid container spacing={2} sx={{ justifyContent: 'flex-start' }}>
                 {coupons.map((coupon, index) => (
-                  <Grid item key={index} xs={6} md={4} lg={3}>
-                    <Zoom in timeout={200 + index * 50}>
-                      <Paper
+                  <Grid item key={index} xs={12} sm={6} md={4} lg={3} xl={2.4}>
+                    <Zoom in timeout={200 + index * 50}><Paper
                         elevation={0}
+                        className="coupon-container"
                         sx={{
-                          height: 200,
-                          border: '2px solid #000',
+                          height: 240, // Increased height to prevent truncation
+                          border: coupon.useColors ? `2px solid ${theme.palette.primary.main}` : '2px solid #000',
                           borderRadius: 2,
                           p: 1.5,
                           display: 'flex',
@@ -455,32 +461,39 @@ const CouponPreview = ({ coupons, setShowPreview }) => {
                           pageBreakInside: 'avoid',
                           position: 'relative',
                           overflow: 'hidden',
+                          backgroundColor: '#ffffff', // Always white background
+                          color: '#000000', // Always black text
                           '&:hover': {
-                            boxShadow: theme.shadows[4],
+                            boxShadow: coupon.useColors ? theme.shadows[4] : '0 4px 8px rgba(0,0,0,0.2)',
                             transform: 'translateY(-2px)',
                             transition: 'all 0.3s ease'
                           },
                           '@media print': {
                             boxShadow: 'none',
+                            backgroundColor: '#ffffff',
+                            color: '#000000',
+                            border: '2px solid #000',
                             '&:hover': {
                               transform: 'none'
                             }
                           }
                         }}
-                      >
-                        {/* Corner decoration */}
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            top: -10,
-                            right: -10,
-                            width: 20,
-                            height: 20,
-                            borderRadius: '50%',
-                            background: theme.palette.primary.main,
-                            opacity: 0.1
-                          }}
-                        />
+                      >                        {/* Corner decoration - only if colored */}
+                        {coupon.useColors && (
+                          <Box
+                            className="print-hide"
+                            sx={{
+                              position: 'absolute',
+                              top: -10,
+                              right: -10,
+                              width: 20,
+                              height: 20,
+                              borderRadius: '50%',
+                              background: theme.palette.primary.main,
+                              opacity: 0.1
+                            }}
+                          />
+                        )}
                         
                         <Box>
                           <Typography 
@@ -488,8 +501,10 @@ const CouponPreview = ({ coupons, setShowPreview }) => {
                             align="center" 
                             sx={{ 
                               fontWeight: 'bold',
-                              fontSize: '0.9rem',
-                              lineHeight: 1.2
+                              fontSize: '1rem',
+                              lineHeight: 1.3,
+                              color: '#000000',
+                              mb: 0.5
                             }}
                           >
                             {coupon.title}
@@ -501,7 +516,8 @@ const CouponPreview = ({ coupons, setShowPreview }) => {
                               display="block"
                               sx={{ 
                                 mt: 0.5,
-                                color: theme.palette.text.secondary
+                                color: '#666666',
+                                fontSize: '0.8rem'
                               }}
                             >
                               {coupon.subtitle}
@@ -509,46 +525,51 @@ const CouponPreview = ({ coupons, setShowPreview }) => {
                           )}
                         </Box>
                         
-                        <Divider sx={{ my: 1 }} />
+                        <Divider className="coupon-divider" sx={{ my: 1, borderColor: '#000000' }} />
                         
                         <Box 
+                          className="coupon-number-bg"
                           sx={{ 
                             display: 'flex', 
                             justifyContent: 'center',
                             alignItems: 'center',
                             flexGrow: 1,
-                            background: `linear-gradient(45deg, 
-                              ${theme.palette.primary.light}20, 
-                              ${theme.palette.secondary.light}20
-                            )`,
+                            background: coupon.useColors 
+                              ? `linear-gradient(45deg, ${theme.palette.primary.light}20, ${theme.palette.secondary.light}20)`
+                              : '#f8f8f8',
                             borderRadius: 1,
-                            mx: -0.5
+                            mx: -0.5,
+                            border: '1px solid #e0e0e0',
+                            minHeight: '80px' // Ensure adequate space for number
                           }}
                         >
                           <Typography 
-                            variant="h3" 
+                            variant="h2" 
                             align="center" 
                             sx={{ 
                               fontWeight: 'bold',
-                              color: theme.palette.primary.main,
-                              textShadow: '1px 1px 2px rgba(0,0,0,0.1)'
+                              color: coupon.useColors ? theme.palette.primary.main : '#000000',
+                              textShadow: coupon.useColors ? '1px 1px 2px rgba(0,0,0,0.1)' : 'none',
+                              fontSize: { xs: '2rem', md: '2.5rem' }
                             }}
                           >
                             {coupon.number}
                           </Typography>
                         </Box>
                         
-                        <Divider sx={{ my: 1 }} />
+                        <Divider className="coupon-divider" sx={{ my: 1, borderColor: '#000000' }} />
                         
-                        <Box>
+                        <Box sx={{ minHeight: '60px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                           {coupon.additionalText && (
                             <Typography 
                               variant="caption" 
                               align="center" 
                               display="block"
                               sx={{ 
-                                fontSize: '0.7rem',
-                                lineHeight: 1.2
+                                fontSize: '0.75rem',
+                                lineHeight: 1.3,
+                                color: '#000000',
+                                mb: 1
                               }}
                             >
                               {coupon.additionalText}
@@ -560,18 +581,20 @@ const CouponPreview = ({ coupons, setShowPreview }) => {
                               sx={{ 
                                 display: 'flex', 
                                 justifyContent: 'center',
-                                mt: 1
+                                mt: 'auto'
                               }}
                             >
                               <Box 
                                 component="img" 
                                 src={coupon.qrCode}
                                 alt="QR Code"
+                                className="qr-code"
                                 sx={{ 
-                                  width: 40, 
-                                  height: 40,
-                                  border: '1px solid #ddd',
-                                  borderRadius: 0.5
+                                  width: 35, 
+                                  height: 35,
+                                  border: '1px solid #000',
+                                  borderRadius: 0.5,
+                                  backgroundColor: '#ffffff'
                                 }}
                               />
                             </Box>
