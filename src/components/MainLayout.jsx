@@ -65,7 +65,6 @@ const ScrollTop = ({ children }) => {
 const MainLayout = ({ darkMode, setDarkMode }) => {
   const [coupons, setCoupons] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleToggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -138,8 +137,7 @@ const MainLayout = ({ darkMode, setDarkMode }) => {
             </IconButton>
           </Box>
         </Toolbar>
-      </AppBar>      
-      {/* Enhanced main content with animations */}
+      </AppBar>        {/* Enhanced main content with animations */}
       <Container 
         component="main" 
         maxWidth="lg"
@@ -147,15 +145,19 @@ const MainLayout = ({ darkMode, setDarkMode }) => {
           mt: 4, 
           mb: 4, 
           flexGrow: 1,
-          px: { xs: 2, sm: 3 }
+          px: { xs: 2, sm: 3 },
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-start'
         }}
-      >
-        <Slide direction="up" in={true} mountOnEnter unmountOnExit timeout={600}>
+      >        <Slide direction="up" in={true} mountOnEnter unmountOnExit timeout={600}>
           <Paper 
             elevation={0}
             sx={{ 
               p: { xs: 3, sm: 4, md: 5 }, 
               borderRadius: 3,
+              width: '100%',
+              maxWidth: '100%',
               background: darkMode 
                 ? 'linear-gradient(145deg, rgba(30,30,30,0.8) 0%, rgba(20,20,20,0.9) 100%)'
                 : 'linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.95) 100%)',
@@ -188,11 +190,9 @@ const MainLayout = ({ darkMode, setDarkMode }) => {
             <Suspense fallback={<LoadingComponent />}>
               <Fade in={true} timeout={800}>
                 <Box>
-                  {!showPreview ? (
-                    <CouponGenerator 
+                  {!showPreview ? (                    <CouponGenerator 
                       setCoupons={setCoupons} 
                       setShowPreview={setShowPreview}
-                      setIsLoading={setIsLoading}
                     />
                   ) : (
                     <CouponPreview 
