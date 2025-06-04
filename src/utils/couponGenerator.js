@@ -1,52 +1,61 @@
-// Helper function to generate a simplified QR code data URL
-// In a real application, you would use a proper QR code library
-const generateQRCode = (text) => {
-  // This is just a placeholder representation of a QR code
-  const canvas = document.createElement('canvas');
-  canvas.width = 50;
-  canvas.height = 50;
-  const ctx = canvas.getContext('2d');
-  
-  // Draw a simple representation of a QR code
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, 50, 50);
-  ctx.fillStyle = '#000000';
-  
-  // Draw border
-  ctx.fillRect(0, 0, 50, 5);
-  ctx.fillRect(0, 0, 5, 50);
-  ctx.fillRect(45, 0, 5, 50);
-  ctx.fillRect(0, 45, 50, 5);
-  
-  // Draw positioning squares
-  ctx.fillRect(10, 10, 10, 10);
-  ctx.fillRect(30, 10, 10, 10);
-  ctx.fillRect(10, 30, 10, 10);
-  
-  // Draw some random dots to look like a QR code based on text
-  const seed = text.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  for (let i = 0; i < 10; i++) {
-    const x = 15 + ((seed + i) % 20);
-    const y = 15 + ((seed + i * 2) % 20);
-    ctx.fillRect(x, y, 2, 2);
+import { generateQRCodeDataURL } from './qrCodeUtils';
+
+// Helper function to generate a QR code data URL using QRCode.js
+const generateQRCode = async (text, size = 80, errorCorrectionLevel = 'H') => {
+  try {
+    const qrDataURL = await generateQRCodeDataURL(text, {
+      width: size,
+      margin: 1,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      },
+      errorCorrectionLevel: errorCorrectionLevel
+    });
+    return qrDataURL;
+  } catch (error) {
+    console.error('Error generating QR code:', error);
+    // Fallback to a simple placeholder if QR generation fails
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = '#000000';
+    ctx.strokeRect(0, 0, size, size);
+    
+    // Draw "QR" text as placeholder
+    ctx.font = `${size/4}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillText('QR', size/2, size/2 + size/8);
+    
+    return canvas.toDataURL();
   }
-  
-  return canvas.toDataURL();
 };
 
 // Generate coupons based on settings
-export const generateCoupons = (settings) => {
+export const generateCoupons = async (settings) => {
   const coupons = [];
   const startNumber = parseInt(settings.startingNumber) || 1;
   
   for (let i = 0; i < settings.numberOfCoupons; i++) {
     const couponNumber = startNumber + i;
-      const coupon = {
+    const qrCodeText = `${settings.qrCodePrefix || 'QURBAN'}-${couponNumber}`;
+    const qrCodeData = settings.showQrCode ? 
+      await generateQRCode(
+        qrCodeText, 
+        settings.qrCodeSize || 80, 
+        settings.qrCodeErrorCorrection || 'H'
+      ) : null;
+    
+    const coupon = {
       number: couponNumber,
       title: settings.title,
       subtitle: settings.subtitle,
       additionalText: settings.additionalText,
-      qrCode: settings.showQrCode ? generateQRCode(`QURBAN-${couponNumber}`) : null,
+      qrCode: qrCodeData,
+      qrCodeText: qrCodeText, // Store the text for reference
       colorScheme: settings.colorScheme,
       borderStyle: settings.borderStyle,
       useColors: settings.useColors,

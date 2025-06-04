@@ -20,7 +20,9 @@ import {
   Zoom,
   Tooltip,
   IconButton,
-  LinearProgress
+  LinearProgress,
+  Switch,
+  FormControlLabel
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -31,6 +33,9 @@ import NumbersIcon from '@mui/icons-material/Numbers';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
 import FormatSizeIcon from '@mui/icons-material/FormatSize';
 import PreviewIcon from '@mui/icons-material/Preview';
+import QrCodeIcon from '@mui/icons-material/QrCode';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 
 import { generateCoupons } from '../utils/couponGenerator';
 
@@ -49,6 +54,9 @@ const CouponGenerator = ({ setCoupons, setShowPreview, setIsLoading }) => {  con
     additionalText: 'Masjid Al-Iman',
     showLogo: true,
     showQrCode: true,
+    qrCodePrefix: 'QURBAN',
+    qrCodeSize: 80,
+    qrCodeErrorCorrection: 'H', // H for high (for print quality)
     colorScheme: 'blackwhite',
     borderStyle: 'solid',
     startingNumber: 1,
@@ -70,18 +78,22 @@ const CouponGenerator = ({ setCoupons, setShowPreview, setIsLoading }) => {  con
       [prop]: newValue,
     });
   };
-
   const handleGenerateCoupons = async () => {
     setIsGenerating(true);
     if (setIsLoading) setIsLoading(true);
     
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const generatedCoupons = generateCoupons(settings);
-    setCoupons(generatedCoupons);
-    setShowPreview(true);
-    setIsGenerating(false);
-    if (setIsLoading) setIsLoading(false);
+    try {
+      // Generate coupons with QR codes (this is now async)
+      const generatedCoupons = await generateCoupons(settings);
+      setCoupons(generatedCoupons);
+      setShowPreview(true);
+    } catch (error) {
+      console.error('Error generating coupons:', error);
+      // Handle error - you might want to show a user-friendly error message
+    } finally {
+      setIsGenerating(false);
+      if (setIsLoading) setIsLoading(false);
+    }
   };
 
   return (
@@ -376,8 +388,7 @@ const CouponGenerator = ({ setCoupons, setShowPreview, setIsLoading }) => {  con
                           />
                         </Box>
                       </Grid>
-                      
-                      <Grid item xs={12}>
+                        <Grid item xs={12}>
                         <Box sx={{ p: 3, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
                           <Typography gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                             <FormatSizeIcon color="secondary" />
@@ -391,6 +402,160 @@ const CouponGenerator = ({ setCoupons, setShowPreview, setIsLoading }) => {  con
                             step={1}
                             valueLabelDisplay="auto"
                           />
+                        </Box>
+                      </Grid>
+
+                      {/* QR Code Settings */}
+                      <Grid item xs={12}>
+                        <Box sx={{ p: 3, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                          <Typography gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                            <QrCodeIcon sx={{ color: 'purple' }} />
+                            <strong>Pengaturan QR Code</strong>
+                          </Typography>
+                          
+                          <Grid container spacing={2}>
+                            <Grid item xs={12} md={6}>
+                              <FormControl fullWidth>
+                                <InputLabel>Tampilkan QR Code</InputLabel>
+                                <Select
+                                  value={settings.showQrCode ? 'show' : 'hide'}
+                                  onChange={(e) => setSettings({
+                                    ...settings,
+                                    showQrCode: e.target.value === 'show'
+                                  })}
+                                  label="Tampilkan QR Code"
+                                >
+                                  <MenuItem value="show">
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                      <VisibilityIcon fontSize="small" />
+                                      Tampilkan
+                                    </Box>
+                                  </MenuItem>
+                                  <MenuItem value="hide">
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                      <VisibilityOffIcon fontSize="small" />
+                                      Sembunyikan
+                                    </Box>
+                                  </MenuItem>
+                                </Select>
+                              </FormControl>
+                            </Grid>
+
+                            {settings.showQrCode && (
+                              <>
+                                <Grid item xs={12} md={6}>
+                                  <TextField
+                                    label="Prefix QR Code"
+                                    fullWidth
+                                    value={settings.qrCodePrefix}
+                                    onChange={handleChange('qrCodePrefix')}
+                                    helperText="Teks yang akan diawali di QR code"
+                                    InputProps={{
+                                      startAdornment: (
+                                        <InputAdornment position="start">
+                                          <QrCodeIcon sx={{ color: 'purple' }} />
+                                        </InputAdornment>
+                                      ),
+                                    }}
+                                  />
+                                </Grid>
+
+                                <Grid item xs={12} md={6}>
+                                  <FormControl fullWidth>
+                                    <InputLabel>Error Correction Level</InputLabel>
+                                    <Select
+                                      value={settings.qrCodeErrorCorrection}
+                                      onChange={handleChange('qrCodeErrorCorrection')}
+                                      label="Error Correction Level"
+                                    >
+                                      <MenuItem value="L">Low (7%) - Ukuran lebih kecil</MenuItem>
+                                      <MenuItem value="M">Medium (15%) - Seimbang</MenuItem>
+                                      <MenuItem value="Q">Quartile (25%) - Tahan kerusakan</MenuItem>
+                                      <MenuItem value="H">High (30%) - Terbaik untuk cetak</MenuItem>
+                                    </Select>
+                                  </FormControl>
+                                </Grid>
+
+                                <Grid item xs={12} md={6}>
+                                  <Box>
+                                    <Typography gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                      <QrCodeIcon sx={{ color: 'purple' }} />
+                                      Ukuran QR Code: {settings.qrCodeSize}px
+                                    </Typography>
+                                    <Slider
+                                      value={settings.qrCodeSize}
+                                      onChange={handleSliderChange('qrCodeSize')}
+                                      min={40}
+                                      max={120}
+                                      step={10}
+                                      valueLabelDisplay="auto"
+                                      marks={[
+                                        { value: 40, label: '40px' },
+                                        { value: 80, label: '80px' },
+                                        { value: 120, label: '120px' }
+                                      ]}
+                                    />
+                                  </Box>
+                                </Grid>
+                              </>
+                            )}
+                          </Grid>
+                        </Box>
+                      </Grid>
+
+                      <Grid item xs={12}>
+                        <Box sx={{ p: 3, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                          <Typography gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                            <InfoIcon color="action" />
+                            Pengaturan QR Code
+                          </Typography>
+                          
+                          <Grid container spacing={2}>
+                            <Grid item xs={12} md={4}>
+                              <TextField
+                                label="Prefix QR Code"
+                                fullWidth
+                                value={settings.qrCodePrefix}
+                                onChange={handleChange('qrCodePrefix')}
+                                helperText="Teks yang ditambahkan di depan nomor kupon"
+                              />
+                            </Grid>
+                            
+                            <Grid item xs={12} md={4}>
+                              <TextField
+                                label="Ukuran QR Code"
+                                type="number"
+                                fullWidth
+                                value={settings.qrCodeSize}
+                                onChange={handleChange('qrCodeSize')}
+                                InputProps={{
+                                  inputProps: { min: 10, max: 300 },
+                                  startAdornment: (
+                                    <InputAdornment position="start">
+                                      <NumbersIcon color="primary" />
+                                    </InputAdornment>
+                                  ),
+                                }}
+                                helperText="Ukuran dalam piksel"
+                              />
+                            </Grid>
+                            
+                            <Grid item xs={12} md={4}>
+                              <FormControl fullWidth>
+                                <InputLabel>Kesalahan Koreksi QR Code</InputLabel>
+                                <Select
+                                  value={settings.qrCodeErrorCorrection}
+                                  onChange={handleChange('qrCodeErrorCorrection')}
+                                  label="Kesalahan Koreksi QR Code"
+                                >
+                                  <MenuItem value="L">Rendah (L)</MenuItem>
+                                  <MenuItem value="M">Sedang (M)</MenuItem>
+                                  <MenuItem value="Q">Tinggi (Q)</MenuItem>
+                                  <MenuItem value="H">Sangat Tinggi (H)</MenuItem>
+                                </Select>
+                              </FormControl>
+                            </Grid>
+                          </Grid>
                         </Box>
                       </Grid>
                     </Grid>
