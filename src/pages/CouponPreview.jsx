@@ -592,7 +592,6 @@ const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMai
                             {coupon.number}
                           </Typography>
                         </Box>
-                        
                         <Divider className="coupon-divider" sx={{ my: 1, borderColor: '#000000' }} />
                         
                         <Box sx={{ minHeight: '60px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
