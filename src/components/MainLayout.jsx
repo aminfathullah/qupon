@@ -65,6 +65,32 @@ const ScrollTop = ({ children }) => {
 const MainLayout = ({ darkMode, setDarkMode }) => {
   const [coupons, setCoupons] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Added for global loading state
+
+  // Lifted settings state
+  const [settings, setSettings] = useState({
+    numberOfCoupons: 10,
+    paperSize: 'A4',
+    orientation: 'portrait',
+    couponSize: { width: 85, height: 55 }, // This might be less relevant if using paper size for layout
+    margins: { top: 10, right: 10, bottom: 10, left: 10 }, // Assuming mm
+    columns: 2, // These will be used by calculateLayout
+    rows: 4,    // These will be used by calculateLayout
+    fontSizeTitle: 14,
+    fontSizeContent: 12,
+    title: 'KUPON QURBAN',
+    subtitle: 'Idul Adha 1446 H',
+    additionalText: 'Masjid Al-Iman',
+    showLogo: true,
+    showQrCode: true,
+    qrCodePrefix: 'QURBAN',
+    qrCodeSize: 80, // This is for QR code image itself, not coupon cell
+    qrCodeErrorCorrection: 'H',
+    colorScheme: 'blackwhite',
+    borderStyle: 'solid',
+    startingNumber: 1,
+    useColors: false,
+  });
 
   const handleToggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -190,14 +216,19 @@ const MainLayout = ({ darkMode, setDarkMode }) => {
             <Suspense fallback={<LoadingComponent />}>
               <Fade in={true} timeout={800}>
                 <Box>
-                  {!showPreview ? (                    <CouponGenerator 
-                      setCoupons={setCoupons} 
+                  {!showPreview ? (                    <CouponGenerator
+                      settings={settings} // Pass settings down
+                      setSettings={setSettings} // Pass setSettings down
+                      setCoupons={setCoupons}
                       setShowPreview={setShowPreview}
+                      setIsLoading={setIsLoading} // Pass setIsLoading
                     />
                   ) : (
-                    <CouponPreview 
-                      coupons={coupons} 
+                    <CouponPreview
+                      coupons={coupons}
+                      settings={settings} // Pass settings down
                       setShowPreview={setShowPreview}
+                      setIsLoading={setIsLoading} // Pass setIsLoading
                     />
                   )}
                 </Box>
@@ -242,6 +273,9 @@ const MainLayout = ({ darkMode, setDarkMode }) => {
           Dibuat dengan ❤️ untuk kemudahan pengaturan qurban
         </Typography>
       </Box>
+
+      {/* Global loading indicator */}
+      {isLoading && <LoadingComponent />}
 
       {/* Scroll to top button */}
       <ScrollTop>

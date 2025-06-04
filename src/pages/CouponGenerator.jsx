@@ -39,29 +39,7 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 
 import { generateCoupons } from '../utils/couponGenerator';
 
-const CouponGenerator = ({ setCoupons, setShowPreview, setIsLoading }) => {  const [settings, setSettings] = useState({
-    numberOfCoupons: 10,
-    paperSize: 'A4',
-    orientation: 'portrait',
-    couponSize: { width: 85, height: 55 },
-    margins: { top: 10, right: 10, bottom: 10, left: 10 },
-    columns: 2,
-    rows: 4,
-    fontSizeTitle: 14,
-    fontSizeContent: 12,
-    title: 'KUPON QURBAN',
-    subtitle: 'Idul Adha 1446 H',
-    additionalText: 'Masjid Al-Iman',
-    showLogo: true,
-    showQrCode: true,
-    qrCodePrefix: 'QURBAN',
-    qrCodeSize: 80,
-    qrCodeErrorCorrection: 'H', // H for high (for print quality)
-    colorScheme: 'blackwhite',
-    borderStyle: 'solid',
-    startingNumber: 1,
-    useColors: false,
-  });
+const CouponGenerator = ({ settings, setSettings, setCoupons, setShowPreview, setIsLoading }) => {  // Removed local settings state
 
   const [isGenerating, setIsGenerating] = useState(false);
 

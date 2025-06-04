@@ -41,53 +41,80 @@ import { useReactToPrint } from 'react-to-print';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import '../components/PrintStyles.css';
+import { calculateLayout } from '../utils/couponGenerator'; // Import calculateLayout
 
-const CouponPreview = ({ coupons, setShowPreview }) => {
+const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMainIsLoading }) => { // Renamed setIsLoading to avoid conflict
   const printRef = useRef();
   const theme = useTheme();
   const [zoomLevel, setZoomLevel] = useState(1);
   const [showInfo, setShowInfo] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  
+  const [isGeneratingPdfOrPrinting, setIsGeneratingPdfOrPrinting] = useState(false); // Local loading state for PDF/Print actions
+
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
     documentTitle: `Kupon-Qurban-${new Date().toLocaleDateString()}`,
     onBeforeGetContent: () => {
-      setIsLoading(true);
+      setIsGeneratingPdfOrPrinting(true);
+      if (setMainIsLoading) setMainIsLoading(true); // Also set global loading if needed
       return Promise.resolve();
     },
     onAfterPrint: () => {
-      setIsLoading(false);
+      setIsGeneratingPdfOrPrinting(false);
+      if (setMainIsLoading) setMainIsLoading(false);
     }
   });
   
   const handleSavePDF = async () => {
-    setIsLoading(true);
+    setIsGeneratingPdfOrPrinting(true);
+    if (setMainIsLoading) setMainIsLoading(true);
     try {
       const element = printRef.current;
+      const { paperWidth, paperHeight } = calculateLayout(settings); // Get paper dimensions
+
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 2, // Adjust scale as needed for quality
         useCORS: true,
-        logging: false
+        logging: false,
+        width: paperWidth * (96 / 25.4), // Convert mm to pixels (assuming 96 DPI)
+        height: paperHeight * (96 / 25.4),
+        windowWidth: paperWidth * (96 / 25.4),
+        windowHeight: paperHeight * (96 / 25.4),
       });
       const data = canvas.toDataURL('image/png');
-      
+
       const pdf = new jsPDF({
-        orientation: 'portrait',
+        orientation: settings.orientation,
         unit: 'mm',
-        format: 'a4',
+        format: settings.paperSize.toLowerCase(), // Use paperSize from settings
       });
-      
+
+      // Get PDF page dimensions
+      const pdfPageWidth = pdf.internal.pageSize.getWidth();
+      const pdfPageHeight = pdf.internal.pageSize.getHeight();
+
+      // Calculate image dimensions to fit the page while maintaining aspect ratio
       const imgProps = pdf.getImageProperties(data);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      
-      pdf.addImage(data, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const aspectRatio = imgProps.width / imgProps.height;
+
+      let imgWidth = pdfPageWidth;
+      let imgHeight = imgWidth / aspectRatio;
+
+      if (imgHeight > pdfPageHeight) {
+        imgHeight = pdfPageHeight;
+        imgWidth = imgHeight * aspectRatio;
+      }
+
+      // Center the image on the page (optional)
+      const x = (pdfPageWidth - imgWidth) / 2;
+      const y = (pdfPageHeight - imgHeight) / 2;
+
+      pdf.addImage(data, 'PNG', x, y, imgWidth, imgHeight);
       pdf.save(`Kupon-Qurban-${new Date().toLocaleDateString().replace(/\//g, '-')}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
     } finally {
-      setIsLoading(false);
+      setIsGeneratingPdfOrPrinting(false);
+      if (setMainIsLoading) setMainIsLoading(false);
     }
   };
 
@@ -221,7 +248,7 @@ const CouponPreview = ({ coupons, setShowPreview }) => {
                   size="large"
                   startIcon={<PrintIcon />}
                   onClick={handlePrint}
-                  disabled={isLoading}
+                  disabled={isGeneratingPdfOrPrinting} // Use local loading state
                   sx={{
                     background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
                     borderRadius: 2,
@@ -235,15 +262,15 @@ const CouponPreview = ({ coupons, setShowPreview }) => {
                     flex: 1
                   }}
                 >
-                  {isLoading ? 'Menyiapkan...' : 'Cetak Kupon'}
+                  {isGeneratingPdfOrPrinting ? 'Menyiapkan...' : 'Cetak Kupon'}
                 </Button>
-                
+
                 <Button
                   variant="contained"
                   size="large"
                   startIcon={<PictureAsPdfIcon />}
                   onClick={handleSavePDF}
-                  disabled={isLoading}
+                  disabled={isGeneratingPdfOrPrinting} // Use local loading state
                   sx={{
                     background: `linear-gradient(45deg, ${theme.palette.secondary.main} 30%, ${theme.palette.secondary.dark} 90%)`,
                     borderRadius: 2,
@@ -257,7 +284,7 @@ const CouponPreview = ({ coupons, setShowPreview }) => {
                     flex: 1
                   }}
                 >
-                  {isLoading ? 'Membuat PDF...' : 'Simpan PDF'}
+                  {isGeneratingPdfOrPrinting ? 'Membuat PDF...' : 'Simpan PDF'}
                 </Button>
               </Stack>
             </Grid>
@@ -422,9 +449,18 @@ const CouponPreview = ({ coupons, setShowPreview }) => {
               border: '1px solid #e0e0e0',
               borderRadius: 2,
               backgroundColor: 'white',
-              boxShadow: theme.shadows[2]
+              boxShadow: theme.shadows[2],
+              // Apply paper size to the preview container
+              width: settings.paperSize === 'A4' ? '210mm' : settings.paperSize === 'A5' ? '148mm' : settings.paperSize === 'Letter' ? '215.9mm' : '215.9mm', // Width based on paper size
+              height: settings.paperSize === 'A4' ? '297mm' : settings.paperSize === 'A5' ? '210mm' : settings.paperSize === 'Letter' ? '279.4mm' : '355.6mm', // Height based on paper size
+              // Adjust for landscape orientation
+              ...(settings.orientation === 'landscape' && {
+                width: settings.paperSize === 'A4' ? '297mm' : settings.paperSize === 'A5' ? '210mm' : settings.paperSize === 'Letter' ? '279.4mm' : '355.6mm',
+                height: settings.paperSize === 'A4' ? '210mm' : settings.paperSize === 'A5' ? '148mm' : settings.paperSize === 'Letter' ? '215.9mm' : '215.9mm',
+              }),
             }}
-          >            <Box
+          >
+            <Box
               ref={printRef}
               sx={{
                 width: '100%',
@@ -624,7 +660,7 @@ const CouponPreview = ({ coupons, setShowPreview }) => {
           }
         }}
         onClick={handlePrint}
-        disabled={isLoading}
+        disabled={isGeneratingPdfOrPrinting} // Use local loading state
       >
         <PrintIcon />
       </Fab>
