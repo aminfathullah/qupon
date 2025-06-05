@@ -147,72 +147,66 @@ const calculateCouponsPerPage = () => {
   const handleSavePDF = async () => {
     setIsGeneratingPdfOrPrinting(true);
     if (setMainIsLoading) setMainIsLoading(true);
+    
     try {
-      const element = printRef.current;
       const { paperWidth, paperHeight } = calculateLayout(settings);
-
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      width: paperWidth * (dpi / 25.4),
-      height: paperHeight * (dpi / 25.4) * couponPages.length,
-      windowWidth: paperWidth * (dpi / 25.4),
-      windowHeight: paperHeight * (dpi / 25.4),
-    });
-      // const data = canvas.toDataURL('image/png');
-
       const pdf = new jsPDF({
         orientation: settings.orientation,
         unit: 'mm',
         format: settings.paperSize.toLowerCase(),
       });
-
-      const pdfPageWidth = pdf.internal.pageSize.getWidth();
-      const pdfPageHeight = pdf.internal.pageSize.getHeight();
-
-      // Calculate how many pages of canvas fit into one PDF page
-      const canvasHeight = canvas.height;
-      const canvasWidth = canvas.width;
-      const aspectRatio = canvasWidth / canvasHeight;
-
-      let imgWidth = pdfPageWidth;
-      let imgHeight = imgWidth / aspectRatio;
-
-      if (imgHeight > pdfPageHeight) {
-        imgHeight = pdfPageHeight;
-        imgWidth = imgHeight * aspectRatio;
-      }
-
-      // Split canvas into pages for PDF
-      const pageHeight = canvasHeight / couponPages.length;
       
-      for (let i = 0; i < couponPages.length; i++) {
-        if (i > 0) {
+      // PDF dimensions
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      // Process each page separately
+      for (let pageIndex = 0; pageIndex < couponPages.length; pageIndex++) {
+        // If not the first page, add a new page to PDF
+        if (pageIndex > 0) {
           pdf.addPage();
         }
         
-        // Create a canvas for this page
-        const pageCanvas = document.createElement('canvas');
-        pageCanvas.width = canvasWidth;
-        pageCanvas.height = pageHeight;
-        const pageCtx = pageCanvas.getContext('2d');
+        // Get the specific page element
+        const pageElement = document.getElementById(`page-${pageIndex}`);
         
-        // Draw the portion of the main canvas for this page
-        pageCtx.drawImage(
-          canvas,
-          0, i * pageHeight, canvasWidth, pageHeight,
-          0, 0, canvasWidth, pageHeight
-        );
+        // Render page to canvas
+        const canvas = await html2canvas(pageElement, {
+          scale: 2, // Higher scale for better quality
+          useCORS: true,
+          logging: false,
+          windowWidth: paperWidth * (dpi / 25.4),
+          windowHeight: paperHeight * (dpi / 25.4)
+        });
         
-        const pageData = pageCanvas.toDataURL('image/png');
-        const x = (pdfPageWidth - imgWidth) / 2;
-        const y = (pdfPageHeight - imgHeight) / 2;
-
-        pdf.addImage(pageData, 'PNG', x, y, imgWidth, imgHeight);
+        // Convert canvas to image
+        const imgData = canvas.toDataURL('image/png');
+        
+        // Calculate image dimensions to fit PDF page
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const aspectRatio = canvasWidth / canvasHeight;
+        
+        // Calculate dimensions to fit the page while maintaining aspect ratio
+        let imgWidth = pdfWidth;
+        let imgHeight = imgWidth / aspectRatio;
+        
+        if (imgHeight > pdfHeight) {
+          imgHeight = pdfHeight;
+          imgWidth = imgHeight * aspectRatio;
+        }
+        
+        // Center the image on the page
+        const x = (pdfWidth - imgWidth) / 2;
+        const y = (pdfHeight - imgHeight) / 2;
+        
+        // Add image to current PDF page
+        pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
       }
-
+      
+      // Save the PDF with a formatted date in the filename
       pdf.save(`Kupon-Qurban-${new Date().toLocaleDateString().replace(/\//g, '-')}.pdf`);
+      
     } catch (error) {
       console.error('Error generating PDF:', error);
     } finally {
