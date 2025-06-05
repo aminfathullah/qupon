@@ -15,7 +15,8 @@ import {
   Fab,
   Zoom,
   Backdrop,
-  CircularProgress
+  CircularProgress,
+  Tooltip
 } from '@mui/material';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
@@ -91,9 +92,8 @@ const MainLayout = ({ darkMode, setDarkMode }) => {
     startingNumber: 1,
     useColors: false,
   });
-
   const handleToggleDarkMode = () => {
-    setDarkMode(!darkMode);
+    setDarkMode(prevMode => !prevMode);
   };
 
   return (
@@ -122,43 +122,48 @@ const MainLayout = ({ darkMode, setDarkMode }) => {
           >
             Qupon: Generator Kupon Qurban
           </Typography>
-          
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2" sx={{ opacity: 0.8 }}>
-              {darkMode ? 'Dark' : 'Light'}
-            </Typography>
-            <FormControlLabel
-              control={
-                <Switch 
-                  checked={darkMode}
-                  onChange={handleToggleDarkMode}
-                  color="default"
-                  sx={{
-                    '& .MuiSwitch-switchBase.Mui-checked': {
-                      color: '#fff',
-                    },
-                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                      backgroundColor: 'rgba(255,255,255,0.3)',
-                    },
-                  }}
-                />
-              }
-              label=""
-            />
-            <IconButton 
-              color="inherit" 
-              onClick={handleToggleDarkMode}
-              sx={{ 
-                ml: 1,
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  backgroundColor: 'rgba(255,255,255,0.1)',
-                  transform: 'rotate(180deg)',
-                },
-              }}
-            >
-              {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
-            </IconButton>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body2" sx={{ opacity: 0.8, fontSize: '0.85rem' }}>
+              {darkMode ? 'Mode Gelap' : 'Mode Terang'}
+            </Typography>            <Tooltip title="Preferensi mode tema akan disimpan otomatis" arrow>
+              <FormControlLabel
+                control={
+                  <Switch 
+                    checked={darkMode}
+                    onChange={handleToggleDarkMode}
+                    color="default"
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': {
+                        color: '#fff',
+                      },
+                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                        backgroundColor: 'rgba(255,255,255,0.3)',
+                      },
+                      '& .MuiSwitch-track': {
+                        transition: 'background-color 0.3s ease',
+                      },
+                    }}
+                  />
+                }
+                label=""
+              />
+            </Tooltip>
+            <Tooltip title={`Beralih ke ${darkMode ? 'mode terang' : 'mode gelap'}`} arrow>
+              <IconButton 
+                color="inherit" 
+                onClick={handleToggleDarkMode}
+                sx={{
+                  ml: 1,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    transform: 'rotate(180deg)',
+                  },
+                }}
+              >
+                {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+              </IconButton>
+            </Tooltip>
           </Box>
         </Toolbar>
       </AppBar>        {/* Enhanced main content with animations */}

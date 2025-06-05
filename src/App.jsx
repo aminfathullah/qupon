@@ -1,11 +1,13 @@
-import { useState, lazy, Suspense } from 'react'
+import { lazy, Suspense } from 'react'
 import { CssBaseline, ThemeProvider, createTheme, Backdrop, CircularProgress, Box, Typography } from '@mui/material'
+import useDarkMode from './utils/useDarkMode'
 
 // Lazy load components
 const MainLayout = lazy(() => import('./components/MainLayout'))
 
 function App() {
-  const [darkMode, setDarkMode] = useState(false)
+  // Use custom hook for dark mode with localStorage persistence (default to dark)
+  const [darkMode, setDarkMode] = useDarkMode(true)
   
   // Custom color palette: Green (faith, halal, nature), Gold (value, generosity), White (clean, modern)
   const greenPalette = {
@@ -94,6 +96,13 @@ function App() {
       borderRadius: 12,
     },
     components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          '*': {
+            transition: 'background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease',
+          },
+        },
+      },
       MuiButton: {
         styleOverrides: {
           root: {
@@ -121,6 +130,7 @@ function App() {
           root: {
             borderRadius: 16,
             backdropFilter: 'blur(10px)',
+            transition: 'background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease',
           },
         },
       },
