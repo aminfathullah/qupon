@@ -111,8 +111,7 @@ const MainLayout = ({ darkMode, setDarkMode }) => {
         }}
       >
         <Toolbar sx={{ py: 1 }}>
-          <QrCode2Icon sx={{ mr: 2, fontSize: 28 }} />
-          <Typography 
+          <QrCode2Icon sx={{ mr: 2, fontSize: 28 }} />          <Typography 
             variant="h6" 
             component="div" 
             sx={{ 
@@ -122,7 +121,7 @@ const MainLayout = ({ darkMode, setDarkMode }) => {
               letterSpacing: '-0.01em'
             }}
           >
-            Kupon Qurban Generator
+            Qupon: Generator Kupon Qurban
           </Typography>
           
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -252,8 +251,7 @@ const MainLayout = ({ darkMode, setDarkMode }) => {
           borderColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
           textAlign: 'center'
         }}
-      >
-        <Typography 
+      >        <Typography 
           variant="body2" 
           sx={{ 
             opacity: 0.8,
@@ -261,7 +259,7 @@ const MainLayout = ({ darkMode, setDarkMode }) => {
             mb: 1
           }}
         >
-          © {new Date().getFullYear()} Kupon Qurban Generator
+          © {new Date().getFullYear()} Qupon: Generator Kupon Qurban
         </Typography>
         <Typography 
           variant="caption" 

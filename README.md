@@ -1,4 +1,4 @@
-# Kupon Qurban Generator
+# Qupon: Generator Kupon Qurban
 
 Aplikasi web sederhana untuk membuat kupon qurban dengan UI/UX yang baik. Aplikasi ini memungkinkan pengguna membuat dan mencetak kupon qurban secara efisien sesuai dengan ukuran kertas yang dipilih.
 

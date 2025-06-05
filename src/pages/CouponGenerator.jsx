@@ -106,9 +106,8 @@ const CouponGenerator = ({ settings, setSettings, setCoupons, setShowPreview, se
                   justifyContent: 'center',
                   gap: 2
                 }}
-              >
-                <AutoAwesomeIcon sx={{ color: '#ff6b35', fontSize: 32 }} />
-                Generator Kupon Qurban
+              >                <AutoAwesomeIcon sx={{ color: '#ff6b35', fontSize: 32 }} />
+                Qupon: Generator Kupon Qurban
                 <AutoAwesomeIcon sx={{ color: '#ff6b35', fontSize: 32 }} />
               </Typography>
               <Typography 
