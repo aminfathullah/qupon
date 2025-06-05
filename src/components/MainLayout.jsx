@@ -101,11 +101,10 @@ const MainLayout = ({ darkMode, setDarkMode }) => {
       {/* Enhanced AppBar with gradient and glassmorphism effect */}
       <AppBar 
         position="static" 
-        elevation={0}
-        sx={{ 
+        elevation={0}        sx={{ 
           background: darkMode 
-            ? 'linear-gradient(135deg, rgba(66,66,66,0.9) 0%, rgba(33,33,33,0.9) 100%)'
-            : 'linear-gradient(135deg, rgba(255,107,53,0.95) 0%, rgba(255,140,66,0.95) 100%)',
+            ? 'linear-gradient(135deg, rgba(46,125,50,0.9) 0%, rgba(27,94,32,0.9) 100%)'
+            : 'linear-gradient(135deg, rgba(139,195,74,0.95) 0%, rgba(255,202,40,0.95) 100%)',
           backdropFilter: 'blur(10px)',
           borderBottom: '1px solid rgba(255,255,255,0.1)',
         }}
@@ -182,10 +181,9 @@ const MainLayout = ({ darkMode, setDarkMode }) => {
               p: { xs: 3, sm: 4, md: 5 }, 
               borderRadius: 3,
               width: '100%',
-              maxWidth: '100%',
-              background: darkMode 
-                ? 'linear-gradient(145deg, rgba(30,30,30,0.8) 0%, rgba(20,20,20,0.9) 100%)'
-                : 'linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.95) 100%)',
+              maxWidth: '100%',              background: darkMode 
+                ? 'linear-gradient(145deg, rgba(46,46,46,0.8) 0%, rgba(33,33,33,0.9) 100%)'
+                : 'linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(248,255,248,0.95) 100%)',
               backdropFilter: 'blur(20px)',
               border: '1px solid',
               borderColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
@@ -201,7 +199,7 @@ const MainLayout = ({ darkMode, setDarkMode }) => {
                 left: 0,
                 right: 0,
                 height: '4px',
-                background: 'linear-gradient(90deg, #ff6b35, #ff8c42, #ffa726, #ff6b35)',
+                background: 'linear-gradient(90deg, #8bc34a, #ffca28, #ffa726, #8bc34a)',
                 backgroundSize: '200% 100%',
                 animation: 'gradient 3s ease infinite',
               },
@@ -242,10 +240,9 @@ const MainLayout = ({ darkMode, setDarkMode }) => {
         sx={{ 
           py: 3,
           px: 2,
-          mt: 'auto',
-          background: darkMode 
-            ? 'linear-gradient(135deg, rgba(33,33,33,0.9) 0%, rgba(20,20,20,0.95) 100%)'
-            : 'linear-gradient(135deg, rgba(248,250,252,0.9) 0%, rgba(241,245,249,0.95) 100%)',
+          mt: 'auto',          background: darkMode 
+            ? 'linear-gradient(135deg, rgba(46,46,46,0.9) 0%, rgba(33,33,33,0.95) 100%)'
+            : 'linear-gradient(135deg, rgba(248,255,248,0.9) 0%, rgba(255,255,255,0.95) 100%)',
           backdropFilter: 'blur(10px)',
           borderTop: '1px solid',
           borderColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
@@ -280,11 +277,10 @@ const MainLayout = ({ darkMode, setDarkMode }) => {
         <Fab 
           color="primary" 
           size="small" 
-          aria-label="scroll back to top"
-          sx={{
-            background: 'linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%)',
+          aria-label="scroll back to top"          sx={{
+            background: 'linear-gradient(135deg, #8bc34a 0%, #ffca28 100%)',
             '&:hover': {
-              background: 'linear-gradient(135deg, #ff5722 0%, #ff7043 100%)',
+              background: 'linear-gradient(135deg, #689f38 0%, #ff8f00 100%)',
               transform: 'scale(1.1)',
             },
             transition: 'all 0.3s ease',

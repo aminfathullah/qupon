@@ -1,6 +1,5 @@
 import { useState, lazy, Suspense } from 'react'
 import { CssBaseline, ThemeProvider, createTheme, Backdrop, CircularProgress, Box, Typography } from '@mui/material'
-import { deepOrange, green, blue } from '@mui/material/colors'
 
 // Lazy load components
 const MainLayout = lazy(() => import('./components/MainLayout'))
@@ -8,31 +7,66 @@ const MainLayout = lazy(() => import('./components/MainLayout'))
 function App() {
   const [darkMode, setDarkMode] = useState(false)
   
+  // Custom color palette: Green (faith, halal, nature), Gold (value, generosity), White (clean, modern)
+  const greenPalette = {
+    50: '#f1f8e9',
+    100: '#dcedc8',
+    200: '#c5e1a5',
+    300: '#aed581',
+    400: '#9ccc65',
+    500: '#8bc34a', // Main green
+    600: '#7cb342',
+    700: '#689f38',
+    800: '#558b2f',
+    900: '#33691e',
+  };
+
+  const goldPalette = {
+    50: '#fffbf0',
+    100: '#fff3c4',
+    200: '#ffeb94',
+    300: '#ffe082',
+    400: '#ffd54f',
+    500: '#ffca28', // Main gold
+    600: '#ffb300',
+    700: '#ff8f00',
+    800: '#ff6f00',
+    900: '#e65100',
+  };
+  
   const theme = createTheme({
     palette: {
       mode: darkMode ? 'dark' : 'light',
       primary: {
-        main: darkMode ? deepOrange[400] : deepOrange[600],
-        light: deepOrange[300],
-        dark: deepOrange[800],
+        main: darkMode ? greenPalette[400] : greenPalette[600], // Green for faith and nature
+        light: greenPalette[300],
+        dark: greenPalette[800],
+        contrastText: '#ffffff',
       },
       secondary: {
-        main: darkMode ? green[400] : green[600],
-        light: green[300],
-        dark: green[800],
+        main: darkMode ? goldPalette[400] : goldPalette[600], // Gold for value and generosity
+        light: goldPalette[300],
+        dark: goldPalette[800],
+        contrastText: '#000000',
       },
       background: {
-        default: darkMode ? '#0a0a0a' : '#f8f9fa',
-        paper: darkMode ? '#1a1a1a' : '#ffffff',
+        default: darkMode ? '#1a1a1a' : '#ffffff', // Clean white background
+        paper: darkMode ? '#2d2d2d' : '#ffffff',
       },
       success: {
-        main: green[600],
+        main: greenPalette[600],
       },
       info: {
-        main: blue[600],
+        main: greenPalette[700],
       },
       warning: {
-        main: deepOrange[600],
+        main: goldPalette[600],
+      },
+      // Custom colors for the Islamic theme
+      tertiary: {
+        main: goldPalette[500],
+        light: goldPalette[300],
+        dark: goldPalette[700],
       },
     },
     typography: {
@@ -74,9 +108,10 @@ function App() {
             transition: 'all 0.2s ease-in-out',
           },
           contained: {
-            background: 'linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%)',
+            background: `linear-gradient(135deg, ${greenPalette[600]} 0%, ${goldPalette[600]} 100%)`,
+            color: '#ffffff',
             '&:hover': {
-              background: 'linear-gradient(135deg, #ff5722 0%, #ff7043 100%)',
+              background: `linear-gradient(135deg, ${greenPalette[700]} 0%, ${goldPalette[700]} 100%)`,
             },
           },
         },
@@ -118,7 +153,7 @@ function App() {
   const LoadingComponent = () => (
     <Backdrop open={true} sx={{ zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.7)' }}>
       <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
-        <CircularProgress size={60} thickness={4} sx={{ color: deepOrange[500] }} />
+        <CircularProgress size={60} thickness={4} sx={{ color: greenPalette[500] }} />
         <Typography variant="h6" sx={{ color: 'white', fontWeight: 500 }}>
           Memuat aplikasi...
         </Typography>

@@ -81,9 +81,8 @@ const CouponGenerator = ({ settings, setSettings, setCoupons, setShowPreview, se
           textAlign: 'center', 
           mb: 4,
           p: 4,
-          borderRadius: 3,
-          background: 'linear-gradient(135deg, rgba(255,107,53,0.1) 0%, rgba(255,140,66,0.1) 100%)',
-          border: '1px solid rgba(255,107,53,0.2)',
+          borderRadius: 3,          background: 'linear-gradient(135deg, rgba(139,195,74,0.1) 0%, rgba(255,202,40,0.1) 100%)',
+          border: '1px solid rgba(139,195,74,0.2)',
           position: 'relative',
           overflow: 'hidden'
         }}
@@ -96,7 +95,7 @@ const CouponGenerator = ({ settings, setSettings, setCoupons, setShowPreview, se
                 gutterBottom 
                 sx={{ 
                   fontWeight: 800,
-                  background: 'linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%)',
+                  background: 'linear-gradient(135deg, #8bc34a 0%, #ffca28 100%)',
                   backgroundClip: 'text',
                   WebkitBackgroundClip: 'text',
                   color: 'transparent',
@@ -106,9 +105,9 @@ const CouponGenerator = ({ settings, setSettings, setCoupons, setShowPreview, se
                   justifyContent: 'center',
                   gap: 2
                 }}
-              >                <AutoAwesomeIcon sx={{ color: '#ff6b35', fontSize: 32 }} />
+              >                <AutoAwesomeIcon sx={{ color: '#8bc34a', fontSize: 32 }} />
                 Qupon: Generator Kupon Qurban
-                <AutoAwesomeIcon sx={{ color: '#ff6b35', fontSize: 32 }} />
+                <AutoAwesomeIcon sx={{ color: '#8bc34a', fontSize: 32 }} />
               </Typography>
               <Typography 
                 variant="body1" 
@@ -132,10 +131,9 @@ const CouponGenerator = ({ settings, setSettings, setCoupons, setShowPreview, se
           <LinearProgress 
             sx={{ 
               height: 6, 
-              borderRadius: 3,
-              backgroundColor: 'rgba(255,107,53,0.2)',
+              borderRadius: 3,              backgroundColor: 'rgba(139,195,74,0.2)',
               '& .MuiLinearProgress-bar': {
-                background: 'linear-gradient(90deg, #ff6b35, #ff8c42)',
+                background: 'linear-gradient(90deg, #8bc34a, #ffca28)',
                 borderRadius: 3,
               }
             }} 
@@ -152,13 +150,13 @@ const CouponGenerator = ({ settings, setSettings, setCoupons, setShowPreview, se
             <Card 
               elevation={0}
               sx={{ 
-                border: '1px solid rgba(255,107,53,0.2)',
+                border: '1px solid rgba(139,195,74,0.2)',
                 borderRadius: 3,
                 overflow: 'hidden',
                 transition: 'all 0.3s ease',
                 '&:hover': {
                   transform: 'translateY(-2px)',
-                  boxShadow: '0 8px 25px rgba(255,107,53,0.15)',
+                  boxShadow: '0 8px 25px rgba(139,195,74,0.15)',
                 },
               }}
             >
@@ -559,16 +557,15 @@ const CouponGenerator = ({ settings, setSettings, setCoupons, setShowPreview, se
                 py: 2,
                 fontSize: '1.1rem',
                 fontWeight: 700,
-                borderRadius: 3,
-                background: 'linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%)',
-                boxShadow: '0 4px 20px rgba(255,107,53,0.3)',
+                borderRadius: 3,                background: 'linear-gradient(135deg, #8bc34a 0%, #ffca28 100%)',
+                boxShadow: '0 4px 20px rgba(139,195,74,0.3)',
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #ff5722 0%, #ff7043 100%)',
-                  boxShadow: '0 6px 30px rgba(255,107,53,0.4)',
+                  background: 'linear-gradient(135deg, #689f38 0%, #ff8f00 100%)',
+                  boxShadow: '0 6px 30px rgba(139,195,74,0.4)',
                   transform: 'translateY(-2px)',
                 },
                 '&:disabled': {
-                  background: 'rgba(255,107,53,0.5)',
+                  background: 'rgba(139,195,74,0.5)',
                 },
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               }}
