@@ -51,8 +51,8 @@ const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMai
   const [zoomLevel, setZoomLevel] = useState(1);
   const [showInfo, setShowInfo] = useState(false);
   const [isGeneratingPdfOrPrinting, setIsGeneratingPdfOrPrinting] = useState(false);
-  const gridSize = useRef({ width: 0, height: 0 });
-  console.log('Grid Size:', gridSize.current);
+  const [gridSize, setGridSize] = useState({ width: 0, height: 0 });
+  console.log('Grid Size:', gridSize);
 
 
   const getScreenDPI = () => {
@@ -68,12 +68,47 @@ const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMai
   return dpi;
 };
 
+const calculateCouponsPerPage = () => {
+  if (gridSize.width === 0 || gridSize.height === 0) {
+    console.warn('Grid size not set yet, cannot calculate coupons per page');
+    return settings.columns * settings.rows; // Default to settings if grid size is not available
+  }
+
+  // Get paper dimensions in pixels (convert from mm to pixels using DPI)
+  const { paperWidth, paperHeight } = layout;
+  const pageWidthPx = paperWidth * (dpi / 25.4);
+  const pageHeightPx = paperHeight * (dpi / 25.4);
+  
+  // Account for page margins and padding (approximately 10mm on each side)
+  const usableWidthPx = pageWidthPx - ((5 * 2) * (dpi / 25.4));
+  const usableHeightPx = pageHeightPx - ((2 * 2) * (dpi / 25.4));
+
+  // Calculate max number of columns and rows that can fit
+  const maxColumns = Math.floor(usableWidthPx / gridSize.width);
+  const maxRows = Math.floor(usableHeightPx / gridSize.height);
+
+  // Ensure we have at least 1 column and row
+  const columns = Math.max(1, maxColumns);
+  const rows = Math.max(1, maxRows);
+  
+  console.log('Calculated layout:', {
+    actualCouponSize: gridSize,
+    pageSize: { width: pageWidthPx, height: pageHeightPx },
+    usableSize: { width: usableWidthPx, height: usableHeightPx },
+    columns,
+    rows,
+    couponsPerPage: columns * rows
+  });
+  
+  return columns * rows;
+};
 
       const dpi = getScreenDPI(); // Dynamically get DPI
       
   // Calculate how many coupons per page based on settings
   const layout = calculateLayout(settings);
-  const couponsPerPage = layout.couponsPerPage;
+  const couponsPerPage = calculateCouponsPerPage();
+
 
   // Split coupons into pages
   const couponPages = [];
@@ -86,7 +121,8 @@ const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMai
     const observer = new window.ResizeObserver(entries => {
       for (let entry of entries) {
         const { width, height } = entry.contentRect;
-        gridSize.current = { width, height };
+        if (width === 0 || height === 0) return; // Ignore zero dimensions
+        setGridSize({ width, height });
       }
     });
     observer.observe(gridRef.current);
@@ -568,29 +604,10 @@ const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMai
                     }
                   }}
                 >
-                  {/* Page number indicator */}
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: 8,
-                      right: 8,
-                      background: theme.palette.primary.main,
-                      color: 'white',
-                      px: 1,
-                      py: 0.5,
-                      borderRadius: 1,
-                      fontSize: '0.75rem',
-                      '@media print': {
-                        display: 'none'
-                      }
-                    }}
-                  >
-                    Halaman {pageIndex + 1}
-                  </Box>
 
                   <Grid 
                     container 
-                    spacing={1} 
+                    spacing={0.2} 
                     sx={{ 
                       height: '100%',
                       justifyContent: 'flex-start',
@@ -706,7 +723,7 @@ const CouponPreview = ({ coupons, settings, setShowPreview, setIsLoading: setMai
                                   borderRadius: 1,
                                   mx: -0.5,
                                   border: '1px solid #e0e0e0',
-                                  minHeight: '80px'
+                                  height: '30px'
                                 }}
                               >
                                 <Typography 
