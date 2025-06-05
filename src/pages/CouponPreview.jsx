@@ -37,7 +37,6 @@ import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import InfoIcon from '@mui/icons-material/Info';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import { useReactToPrint } from 'react-to-print';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import '../components/PrintStyles.css';
@@ -128,21 +127,6 @@ const calculateCouponsPerPage = () => {
     observer.observe(gridRef.current);
     return () => observer.disconnect();
   }, [gridRef, zoomLevel, settings]);
-
-
-  const handlePrint = useReactToPrint({
-    content: () => printRef.current,
-    documentTitle: `Kupon-Qurban-${new Date().toLocaleDateString()}`,
-    onBeforeGetContent: () => {
-      setIsGeneratingPdfOrPrinting(true);
-      if (setMainIsLoading) setMainIsLoading(true);
-      return Promise.resolve();
-    },
-    onAfterPrint: () => {
-      setIsGeneratingPdfOrPrinting(false);
-      if (setMainIsLoading) setMainIsLoading(false);
-    }
-  });
   
   const handleSavePDF = async () => {
     setIsGeneratingPdfOrPrinting(true);
@@ -340,27 +324,6 @@ const calculateCouponsPerPage = () => {
             {/* Main Actions */}
             <Grid item xs={12} md={8}>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <Button
-                  variant="contained"
-                  size="large"
-                  startIcon={<PrintIcon />}
-                  onClick={handlePrint}
-                  disabled={isGeneratingPdfOrPrinting}
-                  sx={{
-                    background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
-                    borderRadius: 2,
-                    px: 3,
-                    py: 1.5,
-                    boxShadow: theme.shadows[4],
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: theme.shadows[8]
-                    },
-                    flex: 1
-                  }}
-                >
-                  {isGeneratingPdfOrPrinting ? 'Menyiapkan...' : 'Cetak Kupon'}
-                </Button>
 
                 <Button
                   variant="contained"
@@ -802,7 +765,7 @@ const calculateCouponsPerPage = () => {
             boxShadow: theme.shadows[12]
           }
         }}
-        onClick={handlePrint}
+        onClick={handleSavePDF}
         disabled={isGeneratingPdfOrPrinting}
       >
         <PrintIcon />
